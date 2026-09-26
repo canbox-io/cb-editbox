@@ -6,54 +6,58 @@
 
 ## [0.0.1] - 2026-09-26
 
-### feat | 新功能 / Features
-
 首个版本发布，基于 CodeMirror 6 的轻量桌面文本编辑器
 
 First release, a lightweight desktop text editor based on CodeMirror 6
 
-多标签页编辑，标签页状态保活（切换不丢失光标、滚动与编辑内容），支持标签右键菜单
+多标签页编辑，标签页状态保活（切换不丢失光标、滚动与编辑内容），支持标签右键菜单（关闭 / 关闭其他 / 全部关闭）
 
-Multi-tab editing with state kept alive across switches (cursor, scroll and content preserved), plus tab context menu
+Multi-tab editing with state kept alive across switches (cursor, scroll and content preserved), plus a tab context menu (close / close others / close all)
 
-文件打开、新建、保存、另存为，支持文件拖拽打开
+文件新建、打开、保存、另存为，支持文件拖拽打开
 
-Open, create, save and save-as files, with drag-and-drop file opening
+Create, open, save and save-as files, with drag-and-drop file opening
+
+支持 JavaScript、TypeScript、Python、Go、Rust、Java、C/C++、C#、HTML、CSS、Vue、JSON、Markdown、SQL、Shell、YAML 等 30+ 种语言语法高亮，并可手动切换语言
+
+Syntax highlighting for 30+ languages including JavaScript, TypeScript, Python, Go, Rust, Java, C/C++, C#, HTML, CSS, Vue, JSON, Markdown, SQL, Shell and YAML, with manual language override
+
+文档内查找与替换
+
+In-document find and replace
 
 自动探测文件编码（含 BOM 识别），支持编码转换与有损保存二次确认
 
 Automatic encoding detection with BOM recognition, encoding conversion and lossy-save confirmation
 
-支持 CRLF / LF / CR 换行符统计、混行提示与手动转换
+支持 CRLF / LF / CR 换行符统计、混行提示与状态栏手动转换
 
-CRLF / LF / CR line ending statistics, mixed-ending detection and manual conversion
+CRLF / LF / CR line ending statistics, mixed-ending detection and manual conversion from the status bar
 
-脏文档 2 秒去抖自动备份，异常退出后下次启动静默恢复未保存内容
+脏文档自动去抖备份，异常退出后下次启动静默恢复未保存内容
 
-Debounced (2s) auto-backup of dirty documents with silent recovery of unsaved content after abnormal exit
+Debounced auto-backup of dirty documents with silent recovery of unsaved content after an abnormal exit
 
-外部文件变更监听：干净文档自动重载，脏文档弹出冲突处理提示
+外部文件变更监听：未编辑文档自动重载，有未保存改动时弹出冲突处理提示
 
-External file change watching: clean documents reload automatically, dirty documents prompt for conflict resolution
+External file change watching: untouched documents reload automatically, documents with unsaved edits prompt for conflict resolution
 
-关闭窗口/标签时拦截未保存的磁盘文档，提供保存/不保存/取消选择
+关闭标签/窗口时拦截未保存文档，提供保存 / 不保存 / 取消选择
 
-Intercept closing of unsaved on-disk documents with save / don't-save / cancel choices
+Intercept closing tabs or windows with unsaved changes, offering save / don't-save / cancel choices
 
-原生应用菜单：文件、编辑、搜索（查找/替换）、视图、语言、选项、帮助
+超过 10 MB 的大文件以只读降级模式打开
 
-Native application menu: File, Edit, Search (find/replace), View, Language, Options, Help
+Open files larger than 10 MB in a degraded read-only mode
+
+自动换行、显示行号开关，界面与编辑器字体可调，浅色 / 深色 / 跟随系统主题（编辑器主题联动）
+
+Word-wrap and line-number toggles, adjustable interface and editor fonts, and light / dark / system themes with the editor theme synced
 
 界面缩放（Ctrl + 滚轮 / Ctrl+= / Ctrl+- / Ctrl+0）并持久化，窗口大小与位置记忆恢复
 
-Interface zoom (Ctrl + wheel / Ctrl+= / Ctrl+- / Ctrl+0) with persistence, and window bounds memory and restoration
+Interface zoom (Ctrl + wheel / Ctrl+= / Ctrl+- / Ctrl+0) with persistence, and window size and position memory and restoration
 
-明/暗主题（含编辑器主题联动与跟随系统），中英文国际化，独立设置窗口
+中英文国际化，原生应用菜单（文件、编辑、搜索、视图、语言、选项、帮助）与独立设置窗口（界面、字体、快捷键、关于）
 
-Light/dark themes (editor theme synced, system-follow supported), Chinese/English i18n, standalone settings window
-
-### ci | 持续集成 / CI
-
-新增 GitHub Release 工作流：v* tag 触发，自动构建并发布 canbox 标准 zip 安装包
-
-Add GitHub Release workflow: triggered by v* tags, automatically builds and publishes the standard canbox zip package
+Chinese/English internationalization, native application menus (File, Edit, Search, View, Language, Options, Help) and a standalone settings window (appearance, fonts, keyboard shortcuts, about)
