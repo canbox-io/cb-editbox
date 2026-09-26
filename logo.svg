@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+    <defs>
+        <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#4F46E5"/>
+            <stop offset="1" stop-color="#7C3AED"/>
+        </linearGradient>
+        <linearGradient id="page" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#FFFFFF"/>
+            <stop offset="1" stop-color="#EEF0FF"/>
+        </linearGradient>
+    </defs>
+
+    <!-- 背景 -->
+    <rect x="32" y="32" width="448" height="448" rx="96" fill="url(#bg)"/>
+    <circle cx="392" cy="120" r="90" fill="#FFFFFF" opacity="0.08"/>
+    <circle cx="120" cy="400" r="70" fill="#FFFFFF" opacity="0.06"/>
+
+    <g transform="translate(256,268)">
+        <!-- 后层页面（多标签页意象） -->
+        <rect x="-104" y="-140" width="150" height="212" rx="16" fill="#FFFFFF" opacity="0.32"/>
+        <rect x="16" y="-152" width="150" height="212" rx="16" fill="#FFFFFF" opacity="0.45"/>
+
+        <!-- 主文档页（折角） -->
+        <path d="M -80 -128 H 44 L 84 -88 V 128 A 16 16 0 0 1 68 144 H -80 A 16 16 0 0 1 -96 128 V -112 A 16 16 0 0 1 -80 -128 Z"
+              fill="url(#page)"/>
+        <path d="M 44 -128 L 84 -88 H 52 A 8 8 0 0 1 44 -96 Z" fill="#C7CBF5"/>
+
+        <!-- 代码行：语法高亮色带 -->
+        <rect x="-64" y="-84" width="96" height="14" rx="7" fill="#F59E0B"/>
+        <rect x="44" y="-84" width="18" height="14" rx="7" fill="#94A3B8"/>
+
+        <rect x="-64" y="-46" width="52" height="14" rx="7" fill="#94A3B8"/>
+        <rect x="-2" y="-46" width="86" height="14" rx="7" fill="#2DD4BF"/>
+
+        <rect x="-64" y="-8" width="118" height="14" rx="7" fill="#94A3B8"/>
+
+        <!-- 编辑光标 -->
+        <rect x="-64" y="30" width="8" height="26" rx="4" fill="#4F46E5"/>
+        <rect x="-46" y="30" width="76" height="14" rx="7" fill="#94A3B8"/>
+        <rect x="42" y="30" width="42" height="14" rx="7" fill="#F59E0B" opacity="0.85"/>
+
+        <rect x="-64" y="80" width="60" height="14" rx="7" fill="#94A3B8"/>
+        <rect x="8" y="80" width="76" height="14" rx="7" fill="#C7CBF5"/>
+    </g>
+</svg>

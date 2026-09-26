@@ -1,0 +1,42 @@
+* {
+    box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    font-family: var(--ui-font-family, 'Segoe UI', 'Microsoft YaHei', sans-serif);
+    font-size: var(--ui-font-size, 13px);
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    user-select: none;
+}
+
+/* Element Plus 深色主题需在 html 上加 .dark */
+html.dark {
+    color-scheme: dark;
+}
+
+/* 可编辑控件恢复文本选择 */
+input,
+textarea,
+.cm-content,
+.cm-editor .cm-scroller {
+    -webkit-user-select: text;
+    -moz-user-select: text;
+    user-select: text;
+}
+
+/* 屏蔽拖拽选中与默认右键（拖放打开文件除外） */
+body {
+    overflow: hidden;
+}
+
+/* Element Plus 桌面化：收敛默认圆角与阴影 */
+.el-message-box,
+.el-dialog {
+    border-radius: 8px;
+}

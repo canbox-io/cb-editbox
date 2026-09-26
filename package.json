@@ -1,0 +1,69 @@
+{
+    "name": "editbox",
+    "displayName": "EditBox",
+    "id": "com.github.rexlevin.cb-editbox",
+    "private": true,
+    "version": "0.0.1",
+    "description": "EditBox - 轻量桌面文本编辑器",
+    "author": "rexlevin",
+    "license": "Apache-2.0",
+    "homepage": "https://github.com/rexlevin/cb-editbox",
+    "main": "main.js",
+    "logo": "public/logo.png",
+    "keywords": [
+        "editor",
+        "text",
+        "code",
+        "utility"
+    ],
+    "scripts": {
+        "dev": "vite --port 5181",
+        "build": "vite build",
+        "preview": "vite preview",
+        "dist": "electron-builder --linux dir",
+        "start": "cross-env NODE_ENV=development electron -r ../canbox-core/injection.js . --app-id=cb-editbox --no-sandbox"
+    },
+    "dependencies": {
+        "@codemirror/commands": "^6.8.0",
+        "@codemirror/language": "^6.10.0",
+        "@codemirror/language-data": "^6.5.0",
+        "@codemirror/state": "^6.5.0",
+        "@codemirror/theme-one-dark": "^6.1.3",
+        "@codemirror/view": "^6.36.0",
+        "@element-plus/icons-vue": "^2.3.2",
+        "chardet": "^2.0.0",
+        "codemirror": "^6.0.2",
+        "element-plus": "^2.13.1",
+        "iconv-lite": "^0.6.3",
+        "pinia": "^3.0.3",
+        "vue": "^3.5.17",
+        "vue-i18n": "^11.2.8",
+        "vue-router": "^4.4.5"
+    },
+    "devDependencies": {
+        "@vitejs/plugin-vue": "^6.0.0",
+        "cross-env": "^10.1.0",
+        "electron": "42.5.1",
+        "electron-builder": "^26.0.12",
+        "vite": "^7.0.0"
+    },
+    "build": {
+        "appId": "com.github.rexlevin.cb-editbox",
+        "directories": {
+            "output": "dist"
+        },
+        "files": [
+            "main.js",
+            "preload.js",
+            "lib/**/*",
+            "build/**/*",
+            "public/**/*",
+            "package.json"
+        ],
+        "linux": {
+            "target": [
+                "dir"
+            ]
+        }
+    }
+}

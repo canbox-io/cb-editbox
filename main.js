@@ -1,0 +1,513 @@
+/**
+ * cb-editbox — 主进程入口
+ *
+ * 标准 Electron APP，通过 canbox-core 注入启动：
+ *   electron -r canbox-core/injection.js cb-editbox/
+ *
+ * 职责：窗口与缩放、文件读写（编码探测/EOL 统计/有损检测）、外部修改监视、
+ * 未保存备份与会话持久化、脏文档关闭拦截协议。
+ */
+const { app, BrowserWindow, Menu, ipcMain, dialog, shell } = require('electron');
+const path = require('path');
+const fs = require('fs');
+const crypto = require('crypto');
+const { detectEncoding, decode, encodeWithLossyCheck, bomBuffer } = require('./lib/encoding');
+const { analyzeEol, convertEol, normalizeLf } = require('./lib/eol');
+const watcher = require('./lib/watcher');
+const { listFonts } = require('./lib/fonts');
+
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+const EOL_KEYS = ['crlf', 'lf', 'cr'];
+
+let mainWindow = null;
+let forceClose = false;
+
+// ---------------------------------------------------------------------------
+// core 辅助
+// ---------------------------------------------------------------------------
+function corePath() {
+    return global.__CANBOX_CORE_PATH__;
+}
+
+function usersDataPath() {
+    return path.join(global.__CANBOX_ENV__.usersPath, 'data');
+}
+
+function getStore(name) {
+    const store = require(path.join(corePath(), 'lib', 'store'));
+    return store.getStore(global.__CANBOX_ENV__.appId, name, usersDataPath());
+}
+
+function backupDir() {
+    return path.join(usersDataPath(), global.__CANBOX_ENV__.appId, 'backup');
+}
+
+// ---------------------------------------------------------------------------
+// IPC: 文件
+// ---------------------------------------------------------------------------
+ipcMain.handle('editbox.openFileDialog', async () => {
+    const result = await dialog.showOpenDialog(mainWindow, {
+        properties: ['openFile', 'multiSelections']
+    });
+    return result.canceled ? [] : result.filePaths;
+});
+
+ipcMain.handle('editbox.saveFileDialog', async (_e, defaultPath) => {
+    const result = await dialog.showSaveDialog(mainWindow, {
+        defaultPath: defaultPath || undefined
+    });
+    return result.canceled ? null : result.filePath;
+});
+
+/**
+ * 读文件：探测编码、统计 EOL、归一为 \n 返回
+ * @returns {object} { ok, content, encoding, hasBom, eol:{dominant,mixed,counts},
+ *                     mtimeMs, size, error?, tooLarge? }
+ */
+ipcMain.handle('editbox.readFile', (_e, filePath) => {
+    try {
+        const stat = fs.statSync(filePath);
+        if (stat.size > MAX_FILE_SIZE) {
+            return { ok: false, tooLarge: true, error: 'FILE_TOO_LARGE' };
+        }
+        const buf = fs.readFileSync(filePath);
+        const { encoding, hasBom } = detectEncoding(buf);
+        const rawText = decode(buf, encoding);
+        const eolInfo = analyzeEol(rawText);
+        return {
+            ok: true,
+            content: normalizeLf(rawText),
+            encoding,
+            hasBom,
+            eol: {
+                dominant: eolInfo.dominant || 'lf',
+                mixed: eolInfo.mixed,
+                counts: eolInfo.counts
+            },
+            mtimeMs: stat.mtimeMs,
+            size: stat.size
+        };
+    } catch (error) {
+        return { ok: false, error: error.message };
+    }
+});
+
+ipcMain.handle('editbox.readFileBackup', (_e, backupId) => {
+    try {
+        const p = path.join(backupDir(), backupId + '.txt');
+        return { ok: true, content: normalizeLf(fs.readFileSync(p, 'utf-8')) };
+    } catch (error) {
+        return { ok: false, error: error.message };
+    }
+});
+
+// 写入流程（writeFile 与 writeFileForceUtf8 共用）
+// steps: 校验 eol 白名单 → 有损检测 → 写盘 → 刷新 watcher 基线
+function doWriteFile(filePath, content, encoding, hasBom, eol) {
+    const targetEol = EOL_KEYS.includes(eol) ? eol : 'lf';
+    const outText = convertEol(content, targetEol);
+    const { buffer, lossy } = encodeWithLossyCheck(outText, encoding);
+    if (lossy) return { ok: false, lossy: true };
+    const bom = bomBuffer(encoding, hasBom);
+    const finalBuf = bom ? Buffer.concat([bom, buffer]) : buffer;
+    fs.writeFileSync(filePath, finalBuf);
+    const stat = fs.statSync(filePath);
+    watcher.updateBaseline(filePath, { mtimeMs: stat.mtimeMs, size: stat.size });
+    return { ok: true, mtimeMs: stat.mtimeMs, size: stat.size };
+}
+
+ipcMain.handle('editbox.writeFile', (_e, payload) => {
+    const { path: filePath, content, encoding, hasBom, eol } = payload;
+    try {
+        return doWriteFile(filePath, content, encoding, Boolean(hasBom), eol);
+    } catch (error) {
+        return { ok: false, error: error.message };
+    }
+});
+
+ipcMain.handle('editbox.writeFileForceUtf8', (_e, payload) => {
+    const { path: filePath, content, eol } = payload;
+    try {
+        return doWriteFile(filePath, content, 'utf-8', false, eol);
+    } catch (error) {
+        return { ok: false, error: error.message };
+    }
+});
+
+ipcMain.handle('editbox.revealFile', (_e, filePath) => {
+    shell.showItemInFolder(filePath);
+    return { success: true };
+});
+
+ipcMain.handle('editbox.watchRegister', (_e, filePath, mtimeMs, size) => {
+    watcher.watchFile(filePath, { mtimeMs, size }, (changedPath, stat) => {
+        if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.webContents.send('editbox.fileExternalChanged', { path: changedPath, stat });
+        }
+    });
+    return { ok: true };
+});
+
+ipcMain.handle('editbox.watchUnregister', (_e, filePath) => {
+    watcher.unwatchFile(filePath);
+    return { ok: true };
+});
+
+// ---------------------------------------------------------------------------
+// IPC: 备份
+// ---------------------------------------------------------------------------
+ipcMain.handle('editbox.saveBackup', (_e, payload) => {
+    const { path: filePath, content } = payload;
+    try {
+        const dir = backupDir();
+        if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+        const backupId = crypto.randomUUID();
+        fs.writeFileSync(path.join(dir, backupId + '.txt'), normalizeLf(content), 'utf-8');
+        // 清理同名文件的旧备份（path 为 null 的未命名文档按 content 无旧档，不清理）
+        if (filePath) {
+            for (const name of fs.readdirSync(dir)) {
+                if (!name.endsWith('.txt')) continue;
+                const metaPath = path.join(dir, name + '.meta');
+                if (!fs.existsSync(metaPath)) continue;
+                if (fs.readFileSync(metaPath, 'utf-8') === filePath && name !== backupId + '.txt') {
+                    fs.unlinkSync(path.join(dir, name));
+                    fs.unlinkSync(metaPath);
+                }
+            }
+        }
+        if (filePath) {
+            fs.writeFileSync(path.join(dir, backupId + '.txt.meta'), filePath, 'utf-8');
+        }
+        return { ok: true, backupId };
+    } catch (error) {
+        return { ok: false, error: error.message };
+    }
+});
+
+// ---------------------------------------------------------------------------
+// IPC: 会话
+// ---------------------------------------------------------------------------
+ipcMain.handle('editbox.sessionGet', () => {
+    const sessionStore = getStore('session');
+    return {
+        cleanShutdown: sessionStore.get('cleanShutdown'),
+        activeIndex: sessionStore.get('activeIndex') || 0,
+        tabs: sessionStore.get('tabs') || []
+    };
+});
+
+ipcMain.handle('editbox.sessionUpdate', (_e, payload) => {
+    const sessionStore = getStore('session');
+    const tabs = Array.isArray(payload.tabs) ? payload.tabs : [];
+    sessionStore.set('tabs', tabs);
+    sessionStore.set('activeIndex', Number(payload.activeIndex) || 0);
+    return { ok: true };
+});
+
+// ---------------------------------------------------------------------------
+// IPC: 缩放 / 关闭
+// ---------------------------------------------------------------------------
+ipcMain.handle('editbox.zoomGet', () => {
+    try {
+        const level = getStore('settings').get('zoomLevel');
+        return level !== undefined ? parseFloat(level) : 1;
+    } catch (error) {
+        return 1;
+    }
+});
+
+ipcMain.handle('editbox.zoomSet', (_e, factor) => {
+    const clamped = Math.max(0.5, Math.min(2.0, Number(factor) || 1));
+    if (mainWindow) mainWindow.webContents.setZoomFactor(clamped);
+    try {
+        getStore('settings').set('zoomLevel', clamped);
+    } catch (error) { /* 持久化失败不阻断缩放 */ }
+    return clamped;
+});
+
+ipcMain.handle('editbox.performClose', () => {
+    // 正常关闭：保留会话中仍引用的备份（未命名脏文档下次恢复），清理孤儿备份，写 cleanShutdown
+    try {
+        const sessionStore = getStore('session');
+        const tabs = sessionStore.get('tabs') || [];
+        const keep = new Set(tabs.filter(t => t.backupId).map(t => t.backupId));
+        const dir = backupDir();
+        if (fs.existsSync(dir)) {
+            for (const name of fs.readdirSync(dir)) {
+                if (!name.endsWith('.txt')) continue;
+                const id = name.slice(0, -4);
+                if (!keep.has(id)) {
+                    fs.unlinkSync(path.join(dir, name));
+                    const meta = path.join(dir, name + '.meta');
+                    if (fs.existsSync(meta)) fs.unlinkSync(meta);
+                }
+            }
+        }
+        sessionStore.set('cleanShutdown', true);
+    } catch (error) {
+        console.error('[cb-editbox] 退出清理失败:', error.message);
+    }
+    forceClose = true;
+    if (mainWindow) mainWindow.close();
+    return { ok: true };
+});
+
+// ---------------------------------------------------------------------------
+// IPC: 设置（独立窗口 + 通用键值）
+// ---------------------------------------------------------------------------
+ipcMain.handle('editbox.settingsGetAll', () => {
+    try {
+        return getStore('settings').store || {};
+    } catch (error) {
+        return {};
+    }
+});
+
+ipcMain.handle('editbox.settingsSet', (_e, key, value) => {
+    try {
+        getStore('settings').set(key, value);
+        // 通知主窗口应用设置（字体/换行/行号/主题等）
+        if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.webContents.send('editbox.settingApplied', key, value);
+        }
+    } catch (error) { /* ignore */ }
+    return { ok: true };
+});
+
+let settingsWindow = null;
+
+function createSettingsWindow() {
+    if (settingsWindow && !settingsWindow.isDestroyed()) {
+        settingsWindow.focus();
+        return;
+    }
+    settingsWindow = new BrowserWindow({
+        width: 720,
+        height: 520,
+        minWidth: 560,
+        minHeight: 420,
+        title: 'EditBox - Settings',
+        icon: path.join(__dirname, 'public', 'logo.png'),
+        parent: mainWindow || undefined,
+        webPreferences: {
+            preload: path.join(__dirname, 'preload.js'),
+            contextIsolation: true,
+            nodeIntegration: false,
+            sandbox: false
+        }
+    });
+    settingsWindow.setMenu(null); // 设置窗口无原生菜单
+    const isDev = process.env.NODE_ENV === 'development';
+    if (isDev) {
+        settingsWindow.loadURL('http://localhost:5181/#/settings');
+    } else {
+        settingsWindow.loadFile(path.join(__dirname, 'build', 'index.html'), { hash: '/settings' });
+    }
+    settingsWindow.on('closed', () => { settingsWindow = null; });
+}
+
+ipcMain.handle('editbox.openSettings', () => {
+    createSettingsWindow();
+    return { ok: true };
+});
+
+ipcMain.handle('editbox.listFonts', async () => {
+    try {
+        return await listFonts();
+    } catch (error) {
+        console.error('[cb-editbox] 字体枚举失败:', error.message);
+        return [];
+    }
+});
+
+// ---------------------------------------------------------------------------
+// 窗口
+// ---------------------------------------------------------------------------
+function isBoundsOnScreen(bounds) {
+    const { screen } = require('electron');
+    const displays = screen.getAllDisplays();
+    return displays.some(display => {
+        const wa = display.workArea;
+        const overlapX = Math.min(bounds.x + bounds.width, wa.x + wa.width) - Math.max(bounds.x, wa.x);
+        const overlapY = Math.min(bounds.y + bounds.height, wa.y + wa.height) - Math.max(bounds.y, wa.y);
+        return overlapX > 0 && overlapY > 0;
+    });
+}
+
+function createWindow() {
+    const winStateStore = getStore('winState');
+    const savedBounds = winStateStore.get('bounds');
+    const valid = savedBounds && isBoundsOnScreen(savedBounds);
+
+    mainWindow = new BrowserWindow({
+        width: valid ? savedBounds.width : 1100,
+        height: valid ? savedBounds.height : 750,
+        x: valid ? savedBounds.x : undefined,
+        y: valid ? savedBounds.y : undefined,
+        minWidth: 760,
+        minHeight: 540,
+        resizable: true,
+        title: 'EditBox',
+        icon: path.join(__dirname, 'public', 'logo.png'),
+        webPreferences: {
+            preload: path.join(__dirname, 'preload.js'),
+            contextIsolation: true,
+            nodeIntegration: false,
+            sandbox: false
+        }
+    });
+
+    const isDev = process.env.NODE_ENV === 'development';
+    if (isDev) {
+        mainWindow.loadURL('http://localhost:5181');
+        mainWindow.webContents.on('did-finish-load', () => {
+            mainWindow.webContents.openDevTools({ mode: 'detach' });
+        });
+    } else {
+        mainWindow.loadFile(path.join(__dirname, 'build', 'index.html'));
+    }
+
+    // 启动即标记"非正常关闭"：本进程内未走到 performClose 就消失 = 崩溃/被杀
+    const sessionStore = getStore('session');
+    sessionStore.set('cleanShutdown', false);
+
+    // 关闭拦截协议：有脏文档时渲染进程负责确认，确认后调 performClose
+    mainWindow.on('close', (event) => {
+        if (!forceClose) {
+            event.preventDefault();
+            winStateStore.set('bounds', mainWindow.getBounds());
+            mainWindow.webContents.send('editbox.requestClose');
+            return;
+        }
+        winStateStore.set('bounds', mainWindow.getBounds());
+    });
+
+    // 缩放快捷键已由原生菜单 accelerator（CmdOrCtrl+=/-/0）接管
+}
+
+// ---------------------------------------------------------------------------
+// 原生菜单（File/Edit/Search/View/Language/Options/Help）
+// ---------------------------------------------------------------------------
+const LANGUAGES = [
+    'Plain Text', 'JavaScript', 'TypeScript', 'HTML', 'CSS', 'JSON', 'Markdown',
+    'Python', 'Go', 'Rust', 'Java', 'C', 'C++', 'C#', 'Shell', 'SQL',
+    'YAML', 'XML', 'Vue', 'JSX', 'TSX', 'PHP', 'Ruby', 'Perl', 'Lua', 'R',
+    'Dart', 'Kotlin', 'Swift'
+];
+
+function sendAction(action, payload) {
+    return () => {
+        if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.webContents.send('editbox.menuAction', action, payload || null);
+        }
+    };
+}
+
+function buildMenu() {
+    const settings = getStore('settings');
+    const wordWrap = settings.get('wordWrap') !== false; // 默认开
+    const lineNumbers = settings.get('lineNumbers') !== false; // 默认开
+
+    const template = [
+        {
+            label: '文件',
+            submenu: [
+                { label: '新建', accelerator: 'CmdOrCtrl+N', click: sendAction('file.new') },
+                { label: '打开...', accelerator: 'CmdOrCtrl+O', click: sendAction('file.open') },
+                { type: 'separator' },
+                { label: '保存', accelerator: 'CmdOrCtrl+S', click: sendAction('file.save') },
+                { label: '另存为...', accelerator: 'CmdOrCtrl+Shift+S', click: sendAction('file.saveAs') },
+                { label: '重新载入', click: sendAction('file.reload') },
+                { type: 'separator' },
+                { label: '关闭', accelerator: 'CmdOrCtrl+W', click: sendAction('file.close') },
+                { label: '关闭其他', click: sendAction('file.closeOthers') },
+                { label: '全部关闭', click: sendAction('file.closeAll') },
+                { type: 'separator' },
+                { label: '退出', accelerator: 'CmdOrCtrl+Q', click: sendAction('file.exit') }
+            ]
+        },
+        {
+            label: '编辑',
+            submenu: [
+                { label: '撤销', accelerator: 'CmdOrCtrl+Z', click: sendAction('edit.undo') },
+                { label: '重做', accelerator: 'CmdOrCtrl+Y', click: sendAction('edit.redo') },
+                { type: 'separator' },
+                { label: '剪切', accelerator: 'CmdOrCtrl+X', click: sendAction('edit.cut') },
+                { label: '复制', accelerator: 'CmdOrCtrl+C', click: sendAction('edit.copy') },
+                { label: '粘贴', accelerator: 'CmdOrCtrl+V', click: sendAction('edit.paste') },
+                { type: 'separator' },
+                { label: '全选', accelerator: 'CmdOrCtrl+A', click: sendAction('edit.selectAll') }
+            ]
+        },
+        {
+            label: '搜索',
+            submenu: [
+                { label: '查找...', accelerator: 'CmdOrCtrl+F', click: sendAction('search.find') },
+                { label: '替换...', accelerator: 'CmdOrCtrl+H', click: sendAction('search.replace') }
+            ]
+        },
+        {
+            label: '视图',
+            submenu: [
+                { label: '放大', accelerator: 'CmdOrCtrl+=', click: sendAction('view.zoomIn') },
+                { label: '缩小', accelerator: 'CmdOrCtrl+-', click: sendAction('view.zoomOut') },
+                { label: '重置缩放', accelerator: 'CmdOrCtrl+0', click: sendAction('view.zoomReset') },
+                { type: 'separator' },
+                {
+                    label: '自动换行', type: 'checkbox', checked: wordWrap,
+                    click: (item) => {
+                        getStore('settings').set('wordWrap', item.checked);
+                        sendAction('view.wordWrap', item.checked)();
+                    }
+                },
+                {
+                    label: '显示行号', type: 'checkbox', checked: lineNumbers,
+                    click: (item) => {
+                        getStore('settings').set('lineNumbers', item.checked);
+                        sendAction('view.lineNumbers', item.checked)();
+                    }
+                }
+            ]
+        },
+        {
+            label: '语言',
+            submenu: LANGUAGES.map(name => ({
+                label: name,
+                click: sendAction('language.set', name)
+            }))
+        },
+        {
+            label: '选项',
+            submenu: [
+                { label: '设置...', accelerator: 'CmdOrCtrl+,', click: sendAction('options.settings') }
+            ]
+        },
+        {
+            label: '帮助',
+            submenu: [
+                { label: '关于 EditBox', click: sendAction('help.about') }
+            ]
+        }
+    ];
+
+    return Menu.buildFromTemplate(template);
+}
+
+function rebuildMenu() {
+    Menu.setApplicationMenu(buildMenu());
+}
+
+app.whenReady().then(() => {
+    rebuildMenu();
+    createWindow();
+});
+
+app.on('window-all-closed', () => {
+    app.quit();
+});
+
+app.on('activate', () => {
+    if (BrowserWindow.getAllWindows().length === 0) {
+        createWindow();
+    }
+});
