@@ -8,7 +8,7 @@
             @tab-change="(id) => { store.activeId = Number(id); store.persistSession(); }"
             @tab-remove="(id) => store.closeTab(Number(id))"
         >
-            <el-tab-pane v-for="tab in store.tabs" :key="tab.id" :name="String(tab.id)">
+            <el-tab-pane v-for="tab in store.tabs" :key="tab.id" :name="tab.id">
                 <template #label>
                     <span class="tab-label" :title="tab.path || tab.name"
                           @contextmenu.prevent="openMenu($event, tab)">
@@ -82,6 +82,7 @@ onBeforeUnmount(() => document.removeEventListener('click', closeMenu));
     line-height: 34px;
     font-family: var(--tab-font-family, inherit);
     font-size: var(--tab-font-size, 13px);
+    font-weight: 600;
     background: var(--el-fill-color);
     border: 1px solid var(--el-border-color-light);
     border-bottom: none;
@@ -94,13 +95,37 @@ onBeforeUnmount(() => document.removeEventListener('click', closeMenu));
 .edit-tabs :deep(.el-tabs__item:hover) {
     color: var(--el-text-color-primary);
 }
-/* 选中标签：更亮背景、加粗，顶部主题色带（NotepadNext 风格） */
+/* 选中标签：更亮背景，顶部主题色带（NotepadNext 风格）；文字常驻加粗 */
 .edit-tabs :deep(.el-tabs__item.is-active) {
     background: var(--el-bg-color);
     color: var(--el-text-color-primary);
-    font-weight: 600;
     border-color: var(--el-border-color);
     border-bottom-color: var(--el-bg-color);
+}
+/* VSCode 风格：关闭 X 常驻占位，显隐只切透明度，tab 尺寸与文字位置保持不动 */
+.edit-tabs :deep(.el-tabs__header .el-tabs__nav .el-tabs__item.is-closable),
+.edit-tabs :deep(.el-tabs__header .el-tabs__nav .el-tabs__item.is-closable:hover),
+.edit-tabs :deep(.el-tabs__header .el-tabs__nav .el-tabs__item.is-active.is-closable) {
+    padding-left: 12px;
+    padding-right: 12px;
+}
+.edit-tabs :deep(.el-tabs__header .el-tabs__nav .el-tabs__item .is-icon-close) {
+    width: 14px;
+    height: 14px;
+    margin-left: 6px;
+    right: 0;
+    opacity: 0;
+    pointer-events: none;
+    transform: scale(0.85);
+    transition: opacity 0.12s ease, transform 0.12s ease,
+        background-color 0.12s ease, color 0.12s ease;
+}
+.edit-tabs :deep(.el-tabs__header .el-tabs__nav .el-tabs__item:hover .is-icon-close),
+.edit-tabs :deep(.el-tabs__header .el-tabs__nav .el-tabs__item.is-active .is-icon-close) {
+    width: 14px;
+    opacity: 1;
+    pointer-events: auto;
+    transform: scale(1);
 }
 .edit-tabs :deep(.el-tabs__item.is-active::before) {
     content: '';

@@ -127,6 +127,13 @@ onMounted(async () => {
             view.scrollDOM.scrollTop = props.tab.scrollTop;
         });
     }
+    // 新建/打开/恢复后，若本编辑器处于激活状态则自动聚焦
+    // （onMounted 为 async，父级 nextTick 调 focusEditor 时 view 可能尚未创建）
+    if (store.activeId === props.tab.id) {
+        requestAnimationFrame(() => {
+            if (view && !view.destroyed) view.focus();
+        });
+    }
 });
 
 // 外部内容替换（重载 / 会话恢复备份）
