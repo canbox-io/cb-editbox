@@ -37,14 +37,20 @@ document.addEventListener('wheel', (e) => {
     }
 }, { passive: false });
 
-// Ctrl+Tab / Ctrl+Shift+Tab 切换标签页（其余快捷键由原生菜单 accelerator 接管）
+// Ctrl+PageUp/PageDown 切换上一个/下一个标签页；
+// Ctrl+Shift+PageUp/PageDown 将当前标签页前移/后移一位
+// （其余快捷键由原生菜单 accelerator 接管）
 document.addEventListener('keydown', async (e) => {
     if (!e.ctrlKey) return;
-    if (e.code === 'Tab') {
-        e.preventDefault();
-        const { useEditorStore } = await import('@/stores/editor');
-        const store = useEditorStore();
-        switchTab(store, e.shiftKey ? -1 : 1);
+    if (e.code !== 'PageUp' && e.code !== 'PageDown') return;
+    e.preventDefault();
+    const { useEditorStore } = await import('@/stores/editor');
+    const store = useEditorStore();
+    const dir = e.code === 'PageDown' ? 1 : -1;
+    if (e.shiftKey) {
+        if (store.activeId !== null) store.moveTab(store.activeId, dir);
+    } else {
+        switchTab(store, dir);
     }
 });
 

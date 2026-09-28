@@ -401,6 +401,17 @@ export const useEditorStore = defineStore('editor', {
             }
         },
 
+        // 移动标签页（Ctrl+Shift+PageUp/PageDown）：前移/后移一位
+        moveTab(tabId, dir) {
+            const idx = this.tabs.findIndex(t2 => t2.id === tabId);
+            if (idx === -1) return;
+            const target = idx + dir;
+            if (target < 0 || target >= this.tabs.length) return; // 已在边界
+            const [tab] = this.tabs.splice(idx, 1);
+            this.tabs.splice(target, 0, tab);
+            this.persistSession();
+        },
+
         closeAll() {
             return this.confirmClose({ fromRequestClose: false });
         },

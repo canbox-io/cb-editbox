@@ -105,6 +105,13 @@
                                      @change="onEditorFontSize" />
                     <span class="unit">px</span>
                 </div>
+
+                <div class="row">
+                    <label>{{ t('settings.uiFontSize') }}</label>
+                    <el-input-number :model-value="uiFontSizeNum" :min="10" :max="20" :step="1"
+                                     @change="onUiFontSize" />
+                    <span class="unit">px</span>
+                </div>
             </div>
 
             <!-- 快捷键 -->
@@ -168,11 +175,13 @@ const statusFontFamily = ref('');
 const statusFontSize = ref(13);
 const editorFontFamily = ref('');
 const editorFontSize = ref(15);
+const uiFontSize = ref(13);
 const fontOptions = ref([]);
 
 const tabFontSizeNum = computed(() => Number(tabFontSize.value) || 13);
 const statusFontSizeNum = computed(() => Number(statusFontSize.value) || 13);
 const editorFontSizeNum = computed(() => Number(editorFontSize.value) || 15);
+const uiFontSizeNum = computed(() => Number(uiFontSize.value) || 13);
 
 const shortcuts = computed(() => [
     { key: 'new', keys: ['Ctrl', 'N'], label: 'act.new' },
@@ -180,8 +189,10 @@ const shortcuts = computed(() => [
     { key: 'save', keys: ['Ctrl', 'S'], label: 'act.save' },
     { key: 'saveAs', keys: ['Ctrl', 'Shift', 'S'], label: 'act.saveAs' },
     { key: 'closeTab', keys: ['Ctrl', 'W'], label: 'ctx.closeTab' },
-    { key: 'nextTab', keys: ['Ctrl', 'Tab'], label: 'act.nextTab' },
-    { key: 'prevTab', keys: ['Ctrl', 'Shift', 'Tab'], label: 'act.prevTab' },
+    { key: 'nextTab', keys: ['Ctrl', 'PageDown'], label: 'act.nextTab' },
+    { key: 'prevTab', keys: ['Ctrl', 'PageUp'], label: 'act.prevTab' },
+    { key: 'moveTabLeft', keys: ['Ctrl', 'Shift', 'PageUp'], label: 'act.moveTabLeft' },
+    { key: 'moveTabRight', keys: ['Ctrl', 'Shift', 'PageDown'], label: 'act.moveTabRight' },
     { key: 'zoomWheel', keys: ['Ctrl', t('key.wheel')], label: 'act.zoom' },
     { key: 'zoomIn', keys: ['Ctrl', '='], label: 'act.zoomIn' },
     { key: 'zoomOut', keys: ['Ctrl', '-'], label: 'act.zoomOut' },
@@ -239,6 +250,20 @@ function onEditorFontSize(v) {
     editorFontSize.value = v;
     persist('editorFontSize', v + 'px');
 }
+// 设置界面（本窗口）字号：仅作用于设置窗口自身，主窗口界面文字不受影响
+function onUiFontSize(v) {
+    uiFontSize.value = v;
+    applyUiFontSize(v);
+    persist('uiFontSize', v + 'px');
+}
+
+function applyUiFontSize(sizePx) {
+    const px = Number(sizePx) || 13;
+    const root = document.documentElement.style;
+    root.setProperty('--ui-font-size', px + 'px');
+    // Element Plus 组件文字随界面字号同步（默认 14px ≈ 13px × 1.08）
+    root.setProperty('--el-font-size-base', Math.round(px * 1.08) + 'px');
+}
 
 onMounted(async () => {
     // 加载系统字体列表
@@ -259,6 +284,8 @@ onMounted(async () => {
         statusFontSize.value = parseInt(s.statusFontSize) || 13;
         editorFontFamily.value = s.editorFontFamily || '';
         editorFontSize.value = parseInt(s.editorFontSize) || 15;
+        uiFontSize.value = parseInt(s.uiFontSize) || 13;
+        applyUiFontSize(uiFontSize.value);
         // 应用语言
         const mode = localeMode.value;
         locale.value = mode === 'system'
@@ -283,7 +310,7 @@ onMounted(async () => {
 }
 .nav-title {
     padding: 0 20px 16px;
-    font-size: 15px;
+    font-size: calc(var(--ui-font-size) * 1.15);
     font-weight: 600;
     color: var(--el-text-color-primary);
     border-bottom: 1px solid var(--el-border-color-lighter);
@@ -300,7 +327,7 @@ onMounted(async () => {
     gap: 10px;
     padding: 10px 20px;
     cursor: pointer;
-    font-size: 14px;
+    font-size: calc(var(--ui-font-size) * 1.08);
     color: var(--el-text-color-regular);
 }
 .side-nav li:hover {
@@ -318,7 +345,7 @@ onMounted(async () => {
 }
 .pane h2 {
     margin: 0 0 20px;
-    font-size: 18px;
+    font-size: calc(var(--ui-font-size) * 1.38);
 }
 .row {
     display: flex;
@@ -328,12 +355,12 @@ onMounted(async () => {
 }
 .row > label {
     width: 120px;
-    font-size: 14px;
+    font-size: calc(var(--ui-font-size) * 1.08);
     color: var(--el-text-color-regular);
 }
 .unit {
     color: var(--el-text-color-secondary);
-    font-size: 13px;
+    font-size: var(--ui-font-size);
 }
 .zoom-row {
     display: flex;
@@ -341,19 +368,19 @@ onMounted(async () => {
     gap: 12px;
 }
 .zoom-val {
-    font-size: 13px;
+    font-size: var(--ui-font-size);
     color: var(--el-text-color-secondary);
     min-width: 48px;
 }
 .desc {
-    font-size: 13px;
+    font-size: var(--ui-font-size);
     color: var(--el-text-color-secondary);
     margin: 0 0 16px;
 }
 .shortcut-table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 13px;
+    font-size: var(--ui-font-size);
 }
 .shortcut-table th,
 .shortcut-table td {
@@ -376,7 +403,7 @@ kbd {
     border-radius: 4px;
     background: var(--el-bg-color);
     font-family: Consolas, monospace;
-    font-size: 12px;
+    font-size: calc(var(--ui-font-size) * 0.92);
     user-select: none;
 }
 .about {
@@ -391,7 +418,7 @@ kbd {
     border-radius: 12px;
 }
 .about .app-name {
-    font-size: 22px;
+    font-size: calc(var(--ui-font-size) * 1.7);
     font-weight: 600;
     margin: 8px 0 4px;
 }
@@ -401,7 +428,7 @@ kbd {
 }
 .about .tech {
     color: var(--el-text-color-secondary);
-    font-size: 12px;
+    font-size: calc(var(--ui-font-size) * 0.92);
     margin-top: 8px;
 }
 </style>

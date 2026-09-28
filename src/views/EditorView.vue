@@ -177,6 +177,11 @@ function onSettingApplied(key, value) {
     else if (key === 'tabFontSize') document.documentElement.style.setProperty('--tab-font-size', value);
     else if (key === 'statusFontFamily') document.documentElement.style.setProperty('--status-font-family', value);
     else if (key === 'statusFontSize') document.documentElement.style.setProperty('--status-font-size', value);
+    else if (key === 'localeMode') {
+        locale.value = value === 'system'
+            ? (navigator.language.startsWith('zh') ? 'zh-CN' : 'en-US')
+            : value;
+    }
     else if (key === 'theme') applyTheme(value);
 }
 

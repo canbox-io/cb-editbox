@@ -266,6 +266,8 @@ ipcMain.handle('editbox.settingsGetAll', () => {
 ipcMain.handle('editbox.settingsSet', (_e, key, value) => {
     try {
         getStore('settings').set(key, value);
+        // 语言变更：即时重建原生菜单（无需重启）
+        if (key === 'localeMode') rebuildMenu();
         // 通知主窗口应用设置（字体/换行/行号/主题等）
         if (mainWindow && !mainWindow.isDestroyed()) {
             mainWindow.webContents.send('editbox.settingApplied', key, value);
@@ -403,65 +405,106 @@ function sendAction(action, payload) {
     };
 }
 
+// 原生菜单文案（主进程独立维护，含 Alt 助记符 &；& 前字符显示为下划线，括号为字面量）
+const MENU_I18N = {
+    'zh-CN': {
+        file: '文件(&F)', edit: '编辑(&E)', search: '搜索(&S)', view: '视图(&V)',
+        language: '语言(&L)', options: '选项(&O)', help: '帮助(&H)',
+        new: '新建(&N)', open: '打开...(&O)', save: '保存(&S)', saveAs: '另存为...(&A)',
+        reload: '重新载入(&R)', close: '关闭(&C)', closeOthers: '关闭其他(&T)', closeAll: '全部关闭(&L)',
+        exit: '退出(&X)',
+        undo: '撤销(&U)', redo: '重做(&R)', cut: '剪切(&T)', copy: '复制(&C)', paste: '粘贴(&P)',
+        selectAll: '全选(&A)',
+        find: '查找...(&F)', replace: '替换...(&R)',
+        zoomIn: '放大(&I)', zoomOut: '缩小(&O)', zoomReset: '重置缩放(&R)',
+        wordWrap: '自动换行(&W)', lineNumbers: '显示行号(&L)',
+        settings: '设置...(&S)', about: '关于 EditBox(&A)'
+    },
+    'en-US': {
+        file: 'File(&F)', edit: 'Edit(&E)', search: 'Search(&S)', view: 'View(&V)',
+        language: 'Language(&L)', options: 'Options(&O)', help: 'Help(&H)',
+        new: 'New(&N)', open: 'Open...(&O)', save: 'Save(&S)', saveAs: 'Save As...(&A)',
+        reload: 'Reload(&R)', close: 'Close(&C)', closeOthers: 'Close Others(&T)', closeAll: 'Close All(&L)',
+        exit: 'Exit(&X)',
+        undo: 'Undo(&U)', redo: 'Redo(&R)', cut: 'Cut(&T)', copy: 'Copy(&C)', paste: 'Paste(&P)',
+        selectAll: 'Select All(&A)',
+        find: 'Find...(&F)', replace: 'Replace...(&R)',
+        zoomIn: 'Zoom In(&I)', zoomOut: 'Zoom Out(&O)', zoomReset: 'Reset Zoom(&R)',
+        wordWrap: 'Word Wrap(&W)', lineNumbers: 'Show Line Numbers(&L)',
+        settings: 'Settings...(&S)', about: 'About EditBox(&A)'
+    }
+};
+
+// 解析当前界面语言：显式设置优先，system 跟随 app 语言
+function resolveLocale() {
+    let mode = 'system';
+    try {
+        mode = getStore('settings').get('localeMode') || 'system';
+    } catch (error) { /* ignore */ }
+    if (mode === 'zh-CN' || mode === 'en-US') return mode;
+    return String(app.getLocale() || '').toLowerCase().startsWith('zh') ? 'zh-CN' : 'en-US';
+}
+
 function buildMenu() {
     const settings = getStore('settings');
     const wordWrap = settings.get('wordWrap') !== false; // 默认开
     const lineNumbers = settings.get('lineNumbers') !== false; // 默认开
+    const M = MENU_I18N[resolveLocale()];
 
     const template = [
         {
-            label: '文件',
+            label: M.file,
             submenu: [
-                { label: '新建', accelerator: 'CmdOrCtrl+N', click: sendAction('file.new') },
-                { label: '打开...', accelerator: 'CmdOrCtrl+O', click: sendAction('file.open') },
+                { label: M.new, accelerator: 'CmdOrCtrl+N', click: sendAction('file.new') },
+                { label: M.open, accelerator: 'CmdOrCtrl+O', click: sendAction('file.open') },
                 { type: 'separator' },
-                { label: '保存', accelerator: 'CmdOrCtrl+S', click: sendAction('file.save') },
-                { label: '另存为...', accelerator: 'CmdOrCtrl+Shift+S', click: sendAction('file.saveAs') },
-                { label: '重新载入', click: sendAction('file.reload') },
+                { label: M.save, accelerator: 'CmdOrCtrl+S', click: sendAction('file.save') },
+                { label: M.saveAs, accelerator: 'CmdOrCtrl+Shift+S', click: sendAction('file.saveAs') },
+                { label: M.reload, click: sendAction('file.reload') },
                 { type: 'separator' },
-                { label: '关闭', accelerator: 'CmdOrCtrl+W', click: sendAction('file.close') },
-                { label: '关闭其他', click: sendAction('file.closeOthers') },
-                { label: '全部关闭', click: sendAction('file.closeAll') },
+                { label: M.close, accelerator: 'CmdOrCtrl+W', click: sendAction('file.close') },
+                { label: M.closeOthers, click: sendAction('file.closeOthers') },
+                { label: M.closeAll, click: sendAction('file.closeAll') },
                 { type: 'separator' },
-                { label: '退出', accelerator: 'CmdOrCtrl+Q', click: sendAction('file.exit') }
+                { label: M.exit, accelerator: 'CmdOrCtrl+Q', click: sendAction('file.exit') }
             ]
         },
         {
-            label: '编辑',
+            label: M.edit,
             submenu: [
-                { label: '撤销', accelerator: 'CmdOrCtrl+Z', click: sendAction('edit.undo') },
-                { label: '重做', accelerator: 'CmdOrCtrl+Y', click: sendAction('edit.redo') },
+                { label: M.undo, accelerator: 'CmdOrCtrl+Z', click: sendAction('edit.undo') },
+                { label: M.redo, accelerator: 'CmdOrCtrl+Y', click: sendAction('edit.redo') },
                 { type: 'separator' },
-                { label: '剪切', accelerator: 'CmdOrCtrl+X', click: sendAction('edit.cut') },
-                { label: '复制', accelerator: 'CmdOrCtrl+C', click: sendAction('edit.copy') },
-                { label: '粘贴', accelerator: 'CmdOrCtrl+V', click: sendAction('edit.paste') },
+                { label: M.cut, accelerator: 'CmdOrCtrl+X', click: sendAction('edit.cut') },
+                { label: M.copy, accelerator: 'CmdOrCtrl+C', click: sendAction('edit.copy') },
+                { label: M.paste, accelerator: 'CmdOrCtrl+V', click: sendAction('edit.paste') },
                 { type: 'separator' },
-                { label: '全选', accelerator: 'CmdOrCtrl+A', click: sendAction('edit.selectAll') }
+                { label: M.selectAll, accelerator: 'CmdOrCtrl+A', click: sendAction('edit.selectAll') }
             ]
         },
         {
-            label: '搜索',
+            label: M.search,
             submenu: [
-                { label: '查找...', accelerator: 'CmdOrCtrl+F', click: sendAction('search.find') },
-                { label: '替换...', accelerator: 'CmdOrCtrl+H', click: sendAction('search.replace') }
+                { label: M.find, accelerator: 'CmdOrCtrl+F', click: sendAction('search.find') },
+                { label: M.replace, accelerator: 'CmdOrCtrl+H', click: sendAction('search.replace') }
             ]
         },
         {
-            label: '视图',
+            label: M.view,
             submenu: [
-                { label: '放大', accelerator: 'CmdOrCtrl+=', click: sendAction('view.zoomIn') },
-                { label: '缩小', accelerator: 'CmdOrCtrl+-', click: sendAction('view.zoomOut') },
-                { label: '重置缩放', accelerator: 'CmdOrCtrl+0', click: sendAction('view.zoomReset') },
+                { label: M.zoomIn, accelerator: 'CmdOrCtrl+=', click: sendAction('view.zoomIn') },
+                { label: M.zoomOut, accelerator: 'CmdOrCtrl+-', click: sendAction('view.zoomOut') },
+                { label: M.zoomReset, accelerator: 'CmdOrCtrl+0', click: sendAction('view.zoomReset') },
                 { type: 'separator' },
                 {
-                    label: '自动换行', type: 'checkbox', checked: wordWrap,
+                    label: M.wordWrap, type: 'checkbox', checked: wordWrap,
                     click: (item) => {
                         getStore('settings').set('wordWrap', item.checked);
                         sendAction('view.wordWrap', item.checked)();
                     }
                 },
                 {
-                    label: '显示行号', type: 'checkbox', checked: lineNumbers,
+                    label: M.lineNumbers, type: 'checkbox', checked: lineNumbers,
                     click: (item) => {
                         getStore('settings').set('lineNumbers', item.checked);
                         sendAction('view.lineNumbers', item.checked)();
@@ -470,22 +513,22 @@ function buildMenu() {
             ]
         },
         {
-            label: '语言',
+            label: M.language,
             submenu: LANGUAGES.map(name => ({
                 label: name,
                 click: sendAction('language.set', name)
             }))
         },
         {
-            label: '选项',
+            label: M.options,
             submenu: [
-                { label: '设置...', accelerator: 'CmdOrCtrl+,', click: sendAction('options.settings') }
+                { label: M.settings, accelerator: 'CmdOrCtrl+,', click: sendAction('options.settings') }
             ]
         },
         {
-            label: '帮助',
+            label: M.help,
             submenu: [
-                { label: '关于 EditBox', click: sendAction('help.about') }
+                { label: M.about, click: sendAction('help.about') }
             ]
         }
     ];
