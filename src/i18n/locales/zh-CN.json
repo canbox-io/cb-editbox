@@ -34,7 +34,8 @@
         "line": "行",
         "col": "列",
         "mixed": "混合",
-        "unsaved": "未保存"
+        "unsaved": "未保存",
+        "plainText": "纯文本"
     },
     "empty": {
         "hint": "将文件拖拽到此处，或按 Ctrl+O 打开",

@@ -6,6 +6,7 @@ import 'element-plus/theme-chalk/dark/css-vars.css';
 import App from './App.vue';
 import router from './router';
 import i18n from './i18n';
+import { useEditorStore } from '@/stores/editor';
 import './style.css';
 
 const app = createApp(App);
@@ -15,19 +16,14 @@ app.use(router);
 app.use(ElementPlus);
 app.mount('#app');
 
-// ====== 缩放快捷键（Ctrl+滚轮；Ctrl+=/-/0 在主进程 before-input-event 处理） ======
-let currentZoom = 1.0;
-window.editbox.zoomGet().then((factor) => {
-    currentZoom = factor || 1;
-}).catch(() => {});
+// ====== 缩放（Ctrl+滚轮；Ctrl+=/-/0 由原生菜单 accelerator 接管） ======
+// 缩放比例由 editor store 统一持有，状态栏据此实时显示
+const editorStore = useEditorStore();
+editorStore.initZoom();
+editorStore.bindZoomChanged();
 
-async function adjustZoom(delta) {
-    let next = Math.max(0.5, Math.min(2.0, currentZoom + delta));
-    next = Math.round(next * 10) / 10;
-    if (next !== currentZoom) {
-        currentZoom = next;
-        await window.editbox.zoomSet(currentZoom);
-    }
+function adjustZoom(delta) {
+    editorStore.setZoom(editorStore.zoomFactor + delta);
 }
 
 document.addEventListener('wheel', (e) => {
@@ -40,17 +36,15 @@ document.addEventListener('wheel', (e) => {
 // Ctrl+PageUp/PageDown 切换上一个/下一个标签页；
 // Ctrl+Shift+PageUp/PageDown 将当前标签页前移/后移一位
 // （其余快捷键由原生菜单 accelerator 接管）
-document.addEventListener('keydown', async (e) => {
+document.addEventListener('keydown', (e) => {
     if (!e.ctrlKey) return;
     if (e.code !== 'PageUp' && e.code !== 'PageDown') return;
     e.preventDefault();
-    const { useEditorStore } = await import('@/stores/editor');
-    const store = useEditorStore();
     const dir = e.code === 'PageDown' ? 1 : -1;
     if (e.shiftKey) {
-        if (store.activeId !== null) store.moveTab(store.activeId, dir);
+        if (editorStore.activeId !== null) editorStore.moveTab(editorStore.activeId, dir);
     } else {
-        switchTab(store, dir);
+        switchTab(editorStore, dir);
     }
 });
 

@@ -222,6 +222,10 @@ ipcMain.handle('editbox.zoomSet', (_e, factor) => {
     try {
         getStore('settings').set('zoomLevel', clamped);
     } catch (error) { /* 持久化失败不阻断缩放 */ }
+    // 通知主窗口状态栏实时跟随（含设置窗口滑杆等其它来源）
+    if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('editbox.zoomChanged', clamped);
+    }
     return clamped;
 });
 
@@ -344,6 +348,16 @@ function isBoundsOnScreen(bounds) {
     });
 }
 
+// 启动时应用已保存的缩放比例（需在内容加载后应用，否则可能被导航重置）
+function applySavedZoom() {
+    try {
+        const level = parseFloat(getStore('settings').get('zoomLevel'));
+        if (!Number.isNaN(level) && mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.webContents.setZoomFactor(Math.max(0.5, Math.min(2.0, level)));
+        }
+    } catch (error) { /* 读取失败保持默认缩放 */ }
+}
+
 function createWindow() {
     const winStateStore = getStore('winState');
     const savedBounds = winStateStore.get('bounds');
@@ -376,6 +390,7 @@ function createWindow() {
     } else {
         mainWindow.loadFile(path.join(__dirname, 'build', 'index.html'));
     }
+    mainWindow.webContents.on('did-finish-load', applySavedZoom);
 
     // 启动即标记"非正常关闭"：本进程内未走到 performClose 就消失 = 崩溃/被杀
     const sessionStore = getStore('session');

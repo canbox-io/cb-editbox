@@ -41,6 +41,7 @@ const fontStyle = computed(() => ({
 
 function loadLanguage(view2, filename) {
     const desc = LanguageDescription.matchFilename(languages, filename || '');
+    store.setTabLanguage(props.tab.id, desc ? desc.name : null);
     if (!desc) {
         view2.dispatch({ effects: languageComp.reconfigure([]) });
         return;
@@ -60,6 +61,7 @@ function loadLanguage(view2, filename) {
 function setLanguage(name) {
     if (!view || view.destroyed) return;
     const desc = languages.find(l => l.name === name);
+    store.setTabLanguage(props.tab.id, desc ? desc.name : null);
     if (!desc) {
         view.dispatch({ effects: languageComp.reconfigure([]) });
         return;

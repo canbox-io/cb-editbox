@@ -34,7 +34,8 @@
         "line": "Line",
         "col": "Col",
         "mixed": "Mixed",
-        "unsaved": "Unsaved"
+        "unsaved": "Unsaved",
+        "plainText": "Plain Text"
     },
     "empty": {
         "hint": "Drag files here, or press Ctrl+O to open",

@@ -136,13 +136,13 @@ async function onMenuAction(action, payload) {
             activeEditorApi.value?.openReplace();
             break;
         case 'view.zoomIn':
-            window.editbox.zoomGet().then(cur => window.editbox.zoomSet(Math.min(2, Math.round((cur + 0.1) * 10) / 10)));
+            await store.setZoom(store.zoomFactor + 0.1);
             break;
         case 'view.zoomOut':
-            window.editbox.zoomGet().then(cur => window.editbox.zoomSet(Math.max(0.5, Math.round((cur - 0.1) * 10) / 10)));
+            await store.setZoom(store.zoomFactor - 0.1);
             break;
         case 'view.zoomReset':
-            window.editbox.zoomSet(1);
+            await store.setZoom(1);
             break;
         case 'view.wordWrap':
             activeEditorApi.value?.setWordWrap(payload);

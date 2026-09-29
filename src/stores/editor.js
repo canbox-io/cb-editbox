@@ -22,7 +22,8 @@ const _backupPending = new Set(); // 待备份 tabId
 export const useEditorStore = defineStore('editor', {
     state: () => ({
         tabs: [],
-        activeId: null
+        activeId: null,
+        zoomFactor: 1 // 界面缩放比例（唯一来源，状态栏据此显示）
     }),
 
     getters: {
@@ -490,6 +491,34 @@ export const useEditorStore = defineStore('editor', {
                 this.reloadTab(tabId, { skipConfirm: true });
             }
             delete tab.externalConflict;
+        },
+
+        // ---------- 缩放 ----------
+        async initZoom() {
+            try {
+                this.zoomFactor = (await window.editbox.zoomGet()) || 1;
+            } catch (error) {
+                this.zoomFactor = 1;
+            }
+        },
+
+        async setZoom(factor) {
+            const clamped = Math.max(0.5, Math.min(2.0, Math.round(factor * 10) / 10));
+            this.zoomFactor = clamped; // 先本地更新，避免连续滚轮事件丢步
+            this.zoomFactor = await window.editbox.zoomSet(clamped);
+        },
+
+        bindZoomChanged() {
+            // 设置窗口滑杆等其它来源的缩放变更 → 主窗口状态栏实时跟随
+            window.editbox.onZoomChanged((factor) => {
+                this.zoomFactor = factor;
+            });
+        },
+
+        // ---------- 文档语言（由 CodeEditor 上报实际生效的语言） ----------
+        setTabLanguage(tabId, language) {
+            const tab = this.tabs.find(t => t.id === tabId);
+            if (tab) tab.language = language || null;
         },
 
         // ---------- 会话持久化（轻量，每次状态变化全量写） ----------

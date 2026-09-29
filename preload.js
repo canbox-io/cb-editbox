@@ -11,7 +11,7 @@
  *   - watchRegister(path, mtimeMs, size) / watchUnregister(path)
  *   - zoomGet() / zoomSet(factor) / zoomFactor()
  *   - pathForFile(file)  拖拽文件 → 绝对路径（Electron 32+ 移除 File.path）
- *   - onFileExternalChanged(cb) / onRequestClose(cb)
+ *   - onFileExternalChanged(cb) / onRequestClose(cb) / onZoomChanged(cb)
  *   - storeGet(name, key) / storeSet(name, key, value)  canbox-core 通用键值
  */
 const { contextBridge, ipcRenderer, webFrame, webUtils } = require('electron');
@@ -57,6 +57,9 @@ contextBridge.exposeInMainWorld('editbox', {
 
     onFileExternalChanged: (cb) => {
         ipcRenderer.on('editbox.fileExternalChanged', (_e, payload) => cb(payload));
+    },
+    onZoomChanged: (cb) => {
+        ipcRenderer.on('editbox.zoomChanged', (_e, factor) => cb(factor));
     },
     onRequestClose: (cb) => {
         ipcRenderer.on('editbox.requestClose', () => cb());

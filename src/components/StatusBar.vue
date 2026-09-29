@@ -21,6 +21,7 @@
         </el-dropdown>
         <span class="cell" v-if="tab && tab.dirty">{{ $t('status.unsaved') }}</span>
         <span class="spacer"></span>
+        <span class="cell" v-if="tab">{{ languageLabel }}</span>
         <span class="cell">{{ zoomPercent }}%</span>
     </div>
 </template>
@@ -28,15 +29,26 @@
 <script setup>
 import { computed } from 'vue';
 import { ArrowDown } from '@element-plus/icons-vue';
+import { useI18n } from 'vue-i18n';
+import { LanguageDescription } from '@codemirror/language';
+import { languages } from '@codemirror/language-data';
 import { useEditorStore } from '@/stores/editor';
 
+const { t } = useI18n();
 const store = useEditorStore();
 const tab = computed(() => store.activeTab);
 const eolLabel = computed(() => {
     if (!tab.value) return '';
     return { crlf: 'CRLF', lf: 'LF', cr: 'CR' }[tab.value.eol] || 'LF';
 });
-const zoomPercent = computed(() => Math.round((window.editbox.zoomFactor() || 1) * 100));
+const zoomPercent = computed(() => Math.round((store.zoomFactor || 1) * 100));
+// 语言：优先取编辑器上报的实际语言（含手动切换），未上报时按文件名即时推断
+const languageLabel = computed(() => {
+    if (!tab.value) return '';
+    if (tab.value.language !== undefined) return tab.value.language || t('status.plainText');
+    const desc = LanguageDescription.matchFilename(languages, tab.value.name || '');
+    return desc ? desc.name : t('status.plainText');
+});
 </script>
 
 <style scoped>
