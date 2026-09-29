@@ -8,7 +8,7 @@ import { EditorView, keymap } from '@codemirror/view';
 import { EditorState, Compartment } from '@codemirror/state';
 import { indentWithTab, undo, redo, selectAll } from '@codemirror/commands';
 import { basicSetup } from 'codemirror';
-import { openSearchPanel } from '@codemirror/search';
+import { openSearchPanel, search } from '@codemirror/search';
 import { LanguageDescription } from '@codemirror/language';
 import { languages } from '@codemirror/language-data';
 import { oneDark } from '@codemirror/theme-one-dark';
@@ -85,6 +85,8 @@ onMounted(async () => {
         doc: props.tab.content,
         extensions: [
             basicSetup,
+            // 查找/替换面板固定在编辑器顶部（默认在底部）
+            search({ top: true }),
             keymap.of([indentWithTab]),
             languageComp.of([]),
             wrapComp.of(wordWrap ? EditorView.lineWrapping : []),
@@ -238,5 +240,45 @@ onBeforeUnmount(() => {
     font-family: var(--editor-font-family, Consolas, 'Courier New', monospace);
     font-size: var(--editor-font-size, 15px);
     line-height: 1.6;
+}
+/* 查找/替换面板：放大字号，行内元素统一水平对齐 */
+.cm-host :deep(.cm-panel.cm-search) {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 10px;
+    padding: 8px 32px 8px 10px;
+    font-size: var(--editor-font-size, 15px);
+}
+/* <br> 在 flex 容器中充当换行符，保证查找行与替换行各占一行 */
+.cm-host :deep(.cm-panel.cm-search br) {
+    flex: 0 0 100%;
+    height: 0;
+    margin: 0;
+}
+.cm-host :deep(.cm-panel.cm-search label) {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin: 0;
+    font-size: 100%;
+    white-space: nowrap;
+}
+.cm-host :deep(.cm-panel.cm-search input),
+.cm-host :deep(.cm-panel.cm-search button) {
+    margin: 0;
+    font-size: 100%;
+    line-height: 1.4;
+}
+.cm-host :deep(.cm-panel.cm-search input[type='checkbox']) {
+    margin: 0;
+}
+.cm-host :deep(.cm-panel.cm-search input.cm-textfield),
+.cm-host :deep(.cm-panel.cm-search button.cm-button) {
+    height: 28px;
+    padding: 0 10px;
+}
+.cm-host :deep(.cm-panel.cm-search button.cm-button) {
+    cursor: pointer;
 }
 </style>
