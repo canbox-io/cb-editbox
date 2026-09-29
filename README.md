@@ -8,6 +8,38 @@ A lightweight desktop text and code editor for [Canbox](https://canbox-io.github
 
 EditBox is a fast, native-feeling editor focused on everyday text and code editing: multiple tabs, reliable encoding and line-ending handling, crash-safe unsaved-content recovery, and syntax highlighting for 30+ languages. It runs as a Canbox app and shares the Canbox runtime.
 
+## Screenshots
+
+### Main window
+
+Multi-tab bar at the top, the CodeMirror editing area in the center, and a status bar at the bottom showing cursor position, encoding, line endings, document language and zoom level — the encoding and line-ending controls can be switched right from the bar.
+
+![Main window with multiple tabs open](./public/screenshots/main.png)
+
+### Syntax highlighting
+
+Automatic syntax highlighting by file name, plus manual language switching from the **Language** menu.
+
+![Syntax highlighting and the Language menu](./public/screenshots/syntax-highlight.png)
+
+### Find & replace
+
+In-document find and replace with match-case, whole-word and regexp options.
+
+![Find and replace panel](./public/screenshots/find-replace.png)
+
+### Dark theme
+
+Light, dark and follow-system themes, with the editor theme switching automatically.
+
+![Dark theme](./public/screenshots/theme-dark.png)
+
+### Settings
+
+A standalone settings window for appearance, fonts, keyboard shortcuts and about.
+
+![Settings window](./public/screenshots/settings.png)
+
 ## Features
 
 - **Multi-tab editing** — open many files at once; switching tabs never loses your cursor position, scroll position or in-progress edits. Tabs support a right-click context menu (close / close others / close all).
@@ -43,22 +75,22 @@ EditBox is a Canbox app and requires the [Canbox](https://canbox-io.github.io/ca
 
 ### Keyboard shortcuts
 
-| Shortcut | Action |
-| --- | --- |
-| `Ctrl + N` | New file |
-| `Ctrl + O` | Open file |
-| `Ctrl + S` | Save |
-| `Ctrl + Shift + S` | Save as |
-| `Ctrl + W` | Close tab |
-| `Ctrl + F` | Find |
-| `Ctrl + H` | Replace |
-| `Ctrl + Z` / `Ctrl + Y` | Undo / Redo |
-| `Ctrl + X` / `Ctrl + C` / `Ctrl + V` | Cut / Copy / Paste |
-| `Ctrl + A` | Select all |
+| Shortcut                                   | Action                |
+| ------------------------------------------ | --------------------- |
+| `Ctrl + N`                               | New file              |
+| `Ctrl + O`                               | Open file             |
+| `Ctrl + S`                               | Save                  |
+| `Ctrl + Shift + S`                       | Save as               |
+| `Ctrl + W`                               | Close tab             |
+| `Ctrl + F`                               | Find                  |
+| `Ctrl + H`                               | Replace               |
+| `Ctrl + Z` / `Ctrl + Y`                | Undo / Redo           |
+| `Ctrl + X` / `Ctrl + C` / `Ctrl + V` | Cut / Copy / Paste    |
+| `Ctrl + A`                               | Select all            |
 | `Ctrl + =` / `Ctrl + -` / `Ctrl + 0` | Zoom in / out / reset |
-| `Ctrl + Wheel` | Zoom |
-| `Ctrl + ,` | Settings |
-| `Ctrl + Q` | Exit |
+| `Ctrl + Wheel`                           | Zoom                  |
+| `Ctrl + ,`                               | Settings              |
+| `Ctrl + Q`                               | Exit                  |
 
 ## Development
 
