@@ -291,6 +291,7 @@ function createSettingsWindow() {
         title: 'EditBox - Settings',
         icon: path.join(__dirname, 'public', 'logo.png'),
         parent: mainWindow || undefined,
+        autoHideMenuBar: true,
         webPreferences: {
             preload: path.join(__dirname, 'preload.js'),
             contextIsolation: true,
@@ -298,7 +299,9 @@ function createSettingsWindow() {
             sandbox: false
         }
     });
-    settingsWindow.setMenu(null); // 设置窗口无原生菜单
+    // 设置窗口无原生菜单（见 rebuildMenu，每次重建菜单后都要重新移除）
+    settingsWindow.removeMenu();
+    settingsWindow.setMenuBarVisibility(false);
     const isDev = process.env.NODE_ENV === 'development';
     if (isDev) {
         settingsWindow.loadURL('http://localhost:5181/#/settings');
@@ -542,7 +545,12 @@ function buildMenu() {
 }
 
 function rebuildMenu() {
+    // setApplicationMenu 会把菜单应用到所有窗口，需重新移除设置窗口的菜单
     Menu.setApplicationMenu(buildMenu());
+    if (settingsWindow && !settingsWindow.isDestroyed()) {
+        settingsWindow.removeMenu();
+        settingsWindow.setMenuBarVisibility(false);
+    }
 }
 
 app.whenReady().then(() => {
