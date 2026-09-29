@@ -408,8 +408,8 @@ function sendAction(action, payload) {
 // 原生菜单文案（主进程独立维护，含 Alt 助记符 &；& 前字符显示为下划线，括号为字面量）
 const MENU_I18N = {
     'zh-CN': {
-        file: '文件(&F)', edit: '编辑(&E)', search: '搜索(&S)', view: '视图(&V)',
-        language: '语言(&L)', options: '选项(&O)', help: '帮助(&H)',
+        file: '文件(&F)(F)', edit: '编辑(&E)(E)', search: '搜索(&S)(S)', view: '视图(&V)(V)',
+        language: '语言(&L)(L)', options: '选项(&O)(O)', help: '帮助(&H)(H)',
         new: '新建(&N)', open: '打开...(&O)', save: '保存(&S)', saveAs: '另存为...(&A)',
         reload: '重新载入(&R)', close: '关闭(&C)', closeOthers: '关闭其他(&T)', closeAll: '全部关闭(&L)',
         exit: '退出(&X)',
@@ -421,8 +421,8 @@ const MENU_I18N = {
         settings: '设置...(&S)', about: '关于 EditBox(&A)'
     },
     'en-US': {
-        file: 'File(&F)', edit: 'Edit(&E)', search: 'Search(&S)', view: 'View(&V)',
-        language: 'Language(&L)', options: 'Options(&O)', help: 'Help(&H)',
+        file: 'File(&F)(F)', edit: 'Edit(&E)(E)', search: 'Search(&S)(S)', view: 'View(&V)(V)',
+        language: 'Language(&L)(L)', options: 'Options(&O)(O)', help: 'Help(&H)(H)',
         new: 'New(&N)', open: 'Open...(&O)', save: 'Save(&S)', saveAs: 'Save As...(&A)',
         reload: 'Reload(&R)', close: 'Close(&C)', closeOthers: 'Close Others(&T)', closeAll: 'Close All(&L)',
         exit: 'Exit(&X)',
