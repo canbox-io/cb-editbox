@@ -12,7 +12,16 @@
         "zoom": "缩放界面",
         "zoomIn": "放大界面",
         "zoomOut": "缩小界面",
-        "zoomReset": "重置缩放为 100%"
+        "zoomReset": "重置缩放为 100%",
+        "findNext": "下一个匹配项",
+        "findPrev": "上一个匹配项",
+        "selectAllMatches": "选中全部匹配项",
+        "replaceOne": "替换当前匹配项",
+        "replaceAll": "全部替换",
+        "matchCase": "区分大小写",
+        "wholeWord": "全字匹配",
+        "useRegexp": "使用正则表达式",
+        "closeFindPanel": "关闭查找/替换面板"
     },
     "ctx": {
         "reload": "重新载入",

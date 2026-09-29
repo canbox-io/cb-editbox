@@ -12,7 +12,16 @@
         "zoom": "Zoom Interface",
         "zoomIn": "Zoom In",
         "zoomOut": "Zoom Out",
-        "zoomReset": "Reset Zoom to 100%"
+        "zoomReset": "Reset Zoom to 100%",
+        "findNext": "Find Next",
+        "findPrev": "Find Previous",
+        "selectAllMatches": "Select All Matches",
+        "replaceOne": "Replace",
+        "replaceAll": "Replace All",
+        "matchCase": "Match Case",
+        "wholeWord": "Whole Word",
+        "useRegexp": "Use Regular Expression",
+        "closeFindPanel": "Close Find/Replace Panel"
     },
     "ctx": {
         "reload": "Reload",
