@@ -4,6 +4,32 @@
 
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/)。
 
+## [0.0.3] - 2026-09-29
+
+### feat | 新功能 / Features
+
+重构查找/替换面板：改为浮动停靠于编辑器右上角，不再挤压编辑区
+查找/替换面板按钮全面图标化，补充悬浮提示并支持中英文
+新增状态栏界面缩放比例实时显示，缩放变化即时跟随（含设置窗口滑杆、菜单与 Ctrl+滚轮）
+状态栏新增当前文档语言显示，按文件名自动识别并与手动切换语言联动
+
+Refactor the find/replace panel into a floating panel pinned to the editor's top-right, no longer squeezing the editing area
+Iconify the find/replace panel buttons with hover tooltips and Chinese/English support
+Show the interface zoom level live in the status bar, updating on every zoom change (Settings slider, menu and Ctrl+wheel)
+Show the current document language in the status bar, auto-detected from the file name and synced with manual language switching
+
+### style | 样式 / Styling
+
+调整查找面板的尺寸与布局，优化显示效果
+
+Adjust the find panel size and layout for a better appearance
+
+### docs | 文档 / Documentation
+
+更新中英文 README，新增界面截图章节并说明截图存放目录
+
+Update the English and Chinese READMEs with a screenshots section and the screenshot directory
+
 ## [0.0.2] - 2026-09-29
 
 ### feat | 新功能 / Features
