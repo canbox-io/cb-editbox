@@ -313,6 +313,11 @@ ipcMain.handle('editbox.openSettings', () => {
     return { ok: true };
 });
 
+ipcMain.handle('editbox.closeSettings', () => {
+    if (settingsWindow && !settingsWindow.isDestroyed()) settingsWindow.close();
+    return { ok: true };
+});
+
 ipcMain.handle('editbox.listFonts', async () => {
     try {
         return await listFonts();

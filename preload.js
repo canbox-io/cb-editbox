@@ -46,6 +46,7 @@ contextBridge.exposeInMainWorld('editbox', {
     zoomFactor: () => webFrame.getZoomFactor(),
 
     openSettings: () => ipcRenderer.invoke('editbox.openSettings'),
+    closeSettings: () => ipcRenderer.invoke('editbox.closeSettings'),
     settingsGetAll: () => ipcRenderer.invoke('editbox.settingsGetAll'),
     settingsSet: (key, value) => ipcRenderer.invoke('editbox.settingsSet', key, value),
 

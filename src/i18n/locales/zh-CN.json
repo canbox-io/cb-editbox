@@ -84,6 +84,7 @@
         "fontPlaceholder": "选择或输入字体名称",
         "shortcuts": "快捷键",
         "shortcutsDesc": "当前版本已实现的全部快捷键",
+        "closeSettings": "关闭设置窗口",
         "colKeys": "快捷键",
         "colAction": "功能",
         "aboutDesc": "基于 Canbox 平台的轻量桌面文本编辑器。"

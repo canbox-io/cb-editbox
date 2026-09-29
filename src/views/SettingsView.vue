@@ -51,15 +51,14 @@
 
                 <div class="row">
                     <label>{{ t('settings.tabFont') }}</label>
-                    <el-select
+                    <el-select-v2
                         :model-value="tabFontFamily"
+                        :options="fontSelectOptions"
                         filterable allow-create default-first-option
                         :placeholder="t('settings.fontPlaceholder')"
                         style="width:300px"
                         @change="onTabFont"
-                    >
-                        <el-option v-for="f in fontOptions" :key="'tab'+f" :label="f" :value="f" />
-                    </el-select>
+                    />
                 </div>
                 <div class="row">
                     <label>{{ t('settings.tabFontSize') }}</label>
@@ -70,15 +69,14 @@
 
                 <div class="row">
                     <label>{{ t('settings.statusFont') }}</label>
-                    <el-select
+                    <el-select-v2
                         :model-value="statusFontFamily"
+                        :options="fontSelectOptions"
                         filterable allow-create default-first-option
                         :placeholder="t('settings.fontPlaceholder')"
                         style="width:300px"
                         @change="onStatusFont"
-                    >
-                        <el-option v-for="f in fontOptions" :key="'status'+f" :label="f" :value="f" />
-                    </el-select>
+                    />
                 </div>
                 <div class="row">
                     <label>{{ t('settings.statusFontSize') }}</label>
@@ -89,15 +87,14 @@
 
                 <div class="row">
                     <label>{{ t('settings.editorFont') }}</label>
-                    <el-select
+                    <el-select-v2
                         :model-value="editorFontFamily"
+                        :options="fontSelectOptions"
                         filterable allow-create default-first-option
                         :placeholder="t('settings.fontPlaceholder')"
                         style="width:300px"
                         @change="onEditorFont"
-                    >
-                        <el-option v-for="f in fontOptions" :key="'ed'+f" :label="f" :value="f" />
-                    </el-select>
+                    />
                 </div>
                 <div class="row">
                     <label>{{ t('settings.editorFontSize') }}</label>
@@ -147,7 +144,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { Monitor, EditPen, Key, InfoFilled } from '@element-plus/icons-vue';
 import { useI18n } from 'vue-i18n';
 import logoUrl from '../../logo.png';
@@ -177,6 +174,8 @@ const editorFontFamily = ref('');
 const editorFontSize = ref(15);
 const uiFontSize = ref(13);
 const fontOptions = ref([]);
+// el-select-v2 需要 {value,label} 结构，并做虚拟滚动（系统字体可达数千项）
+const fontSelectOptions = computed(() => fontOptions.value.map((f) => ({ value: f, label: f })));
 
 const tabFontSizeNum = computed(() => Number(tabFontSize.value) || 13);
 const statusFontSizeNum = computed(() => Number(statusFontSize.value) || 13);
@@ -199,7 +198,8 @@ const shortcuts = computed(() => [
     { key: 'zoomReset', keys: ['Ctrl', '0'], label: 'act.zoomReset' },
     { key: 'find', keys: ['Ctrl', 'F'], label: 'menu.find' },
     { key: 'replace', keys: ['Ctrl', 'H'], label: 'menu.replace' },
-    { key: 'settings', keys: ['Ctrl', ','], label: 'menu.settings' }
+    { key: 'settings', keys: ['Ctrl', ','], label: 'menu.settings' },
+    { key: 'closeSettings', keys: ['Esc'], label: 'settings.closeSettings' }
 ]);
 
 // 统一：更新本地状态 + 持久化（主进程会推送主窗口实时应用）
@@ -265,7 +265,23 @@ function applyUiFontSize(sizePx) {
     root.setProperty('--el-font-size-base', Math.round(px * 1.08) + 'px');
 }
 
+// Esc 关闭设置窗口；下拉展开时不关闭（由 Element Plus 自行收起下拉）
+function isDropdownOpen() {
+    return [...document.querySelectorAll('.el-popper')].some((el) => {
+        const style = getComputedStyle(el);
+        return style.display !== 'none' && style.visibility !== 'hidden';
+    });
+}
+
+function onEscClose(e) {
+    if (e.key === 'Escape' && !isDropdownOpen()) {
+        e.preventDefault();
+        window.editbox.closeSettings();
+    }
+}
+
 onMounted(async () => {
+    document.addEventListener('keydown', onEscClose);
     // 加载系统字体列表
     try {
         fontOptions.value = await window.editbox.listFonts();
@@ -292,6 +308,10 @@ onMounted(async () => {
             ? (navigator.language.startsWith('zh') ? 'zh-CN' : 'en-US')
             : mode;
     } catch (e) { /* ignore */ }
+});
+
+onBeforeUnmount(() => {
+    document.removeEventListener('keydown', onEscClose);
 });
 </script>
 

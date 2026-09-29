@@ -84,6 +84,7 @@
         "fontPlaceholder": "Select or type a font name",
         "shortcuts": "Keyboard Shortcuts",
         "shortcutsDesc": "All shortcuts implemented in this version",
+        "closeSettings": "Close Settings Window",
         "colKeys": "Shortcut",
         "colAction": "Action",
         "aboutDesc": "A lightweight desktop text editor built on Canbox platform."
