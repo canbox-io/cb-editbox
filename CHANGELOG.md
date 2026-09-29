@@ -4,6 +4,32 @@
 
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/)。
 
+## [0.0.2] - 2026-09-29
+
+### feat | 新功能 / Features
+
+新增关闭设置窗口功能，支持按 Esc 快捷键关闭
+新增标签页移动功能，支持 Ctrl+Shift+PageUp / Ctrl+Shift+PageDown 前移或后移当前标签页
+设置界面新增"设置界面字号"调节项，原生应用菜单支持中英文国际化
+字体下拉改用虚拟滚动列表，消除切换"字体"菜单时的卡顿
+
+Add close-settings-window via the Esc shortcut
+Add tab reordering with Ctrl+Shift+PageUp / Ctrl+Shift+PageDown to move the active tab
+Add a "settings font size" option and internationalized native menu labels
+Switch the font dropdown to a virtualized list, eliminating the lag when switching to the Fonts pane
+
+### fix | 问题修复 / Bug Fixes
+
+修复设置窗口会显示原生应用菜单的问题
+
+Fix the settings window showing the native application menu
+
+### style | 样式 / Styling
+
+修正原生菜单文案的助记符显示格式
+
+Fix mnemonic display format in native menu labels
+
 ## [0.0.1] - 2026-09-26
 
 首个版本发布，基于 CodeMirror 6 的轻量桌面文本编辑器
