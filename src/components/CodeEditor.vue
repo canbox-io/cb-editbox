@@ -279,8 +279,8 @@ onBeforeUnmount(() => {
     top: 8px;
     right: 14px;
     left: auto;
-    width: 470px;
-    max-width: calc(100% - 28px);
+    width: 336px;
+    max-width: calc(100% - 24px);
     border: none;
     border-radius: 6px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.28);
@@ -290,16 +290,16 @@ onBeforeUnmount(() => {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 6px 8px;
-    padding: 8px 38px 8px 10px;
+    gap: 3px 3px;
+    padding: 5px 28px 5px 6px;
     font-size: var(--editor-font-size, 15px);
 }
 .cm-host :deep(.cm-panel.cm-search input.cm-textfield) {
-    width: 190px;
-    min-width: 120px;
-    height: 26px;
+    width: 148px;
+    min-width: 100px;
+    height: 22px;
     margin: 0;
-    padding: 0 8px;
+    padding: 0 5px;
     font-size: 100%;
     border-radius: 4px;
 }
@@ -319,8 +319,8 @@ onBeforeUnmount(() => {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 30px;
-    height: 26px;
+    width: 22px;
+    height: 22px;
     margin: 0;
     font-size: 0;
     border: 1px solid transparent;
@@ -332,7 +332,7 @@ onBeforeUnmount(() => {
 }
 .cm-host :deep(.cm-panel.cm-search label)::before {
     font-family: Consolas, 'Courier New', monospace;
-    font-size: 14px;
+    font-size: 12px;
     line-height: 1;
 }
 .cm-host :deep(.cm-panel.cm-search label:has(input[name='case']))::before { content: 'Aa'; }
@@ -349,8 +349,8 @@ onBeforeUnmount(() => {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 26px;
-    height: 26px;
+    width: 22px;
+    height: 22px;
     margin: 0;
     padding: 0;
     font-size: 0;
@@ -362,16 +362,16 @@ onBeforeUnmount(() => {
 }
 .cm-host :deep(.cm-panel.cm-search button.cm-button)::before {
     content: '';
-    width: 16px;
-    height: 16px;
+    width: 14px;
+    height: 14px;
     background-color: currentColor;
     -webkit-mask-repeat: no-repeat;
     -webkit-mask-position: center;
-    -webkit-mask-size: 16px 16px;
+    -webkit-mask-size: 14px 14px;
     -webkit-mask-image: var(--search-panel-icon);
     mask-repeat: no-repeat;
     mask-position: center;
-    mask-size: 16px 16px;
+    mask-size: 14px 14px;
     mask-image: var(--search-panel-icon);
 }
 .cm-host :deep(.cm-panel.cm-search button.cm-button:hover) {
@@ -394,16 +394,16 @@ onBeforeUnmount(() => {
 }
 /* 关闭按钮：右上角，与查找行居中对齐 */
 .cm-host :deep(.cm-panel.cm-search [name='close']) {
-    top: 9px;
-    right: 8px;
+    top: 6px;
+    right: 4px;
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 24px;
-    height: 24px;
+    width: 20px;
+    height: 20px;
     margin: 0;
     padding: 0;
-    font-size: 15px;
+    font-size: 13px;
     line-height: 1;
     background: transparent;
     border: none;
@@ -413,13 +413,13 @@ onBeforeUnmount(() => {
 .cm-host :deep(.cm-panel.cm-search [name='close']:hover) {
     background-color: rgba(127, 127, 127, 0.2);
 }
-/* 排列顺序参照 VSCode：输入框 → 开关 → 选中全部匹配 → 上一个/下一个靠右 → 换行 → 替换 */
+/* 排列顺序参照 VSCode：输入框 → 开关 → 选中全部匹配 → 上一个/下一个 → 换行 → 替换 */
 .cm-host :deep(.cm-panel.cm-search input[name='search']) { order: 0; }
 .cm-host :deep(.cm-panel.cm-search label:has(input[name='case'])) { order: 1; }
 .cm-host :deep(.cm-panel.cm-search label:has(input[name='word'])) { order: 2; }
 .cm-host :deep(.cm-panel.cm-search label:has(input[name='re'])) { order: 3; }
 .cm-host :deep(.cm-panel.cm-search button[name='select']) { order: 4; }
-.cm-host :deep(.cm-panel.cm-search button[name='next']) { order: 5; margin-left: auto; }
+.cm-host :deep(.cm-panel.cm-search button[name='next']) { order: 5; }
 .cm-host :deep(.cm-panel.cm-search button[name='prev']) { order: 6; }
 .cm-host :deep(.cm-panel.cm-search input[name='replace']) { order: 8; }
 .cm-host :deep(.cm-panel.cm-search button[name='replace']) { order: 9; }
