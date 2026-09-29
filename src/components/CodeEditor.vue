@@ -273,6 +273,18 @@ onBeforeUnmount(() => {
     font-size: var(--editor-font-size, 15px);
     line-height: 1.6;
 }
+/* 面板浮在编辑器右上角：脱离布局流，不占（不挤压）编辑区；宽度固定，不随窗口拉伸 */
+.cm-host :deep(.cm-panels-top:has(.cm-panel.cm-search)) {
+    position: absolute;
+    top: 8px;
+    right: 14px;
+    left: auto;
+    width: 470px;
+    max-width: calc(100% - 28px);
+    border: none;
+    border-radius: 6px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.28);
+}
 /* 查找/替换面板：参照 VSCode —— 两行排布，从替换输入框起换行，按钮全部图标化 */
 .cm-host :deep(.cm-panel.cm-search) {
     display: flex;
@@ -283,7 +295,8 @@ onBeforeUnmount(() => {
     font-size: var(--editor-font-size, 15px);
 }
 .cm-host :deep(.cm-panel.cm-search input.cm-textfield) {
-    width: 220px;
+    width: 190px;
+    min-width: 120px;
     height: 26px;
     margin: 0;
     padding: 0 8px;
